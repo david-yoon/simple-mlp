@@ -34,38 +34,26 @@ class SimpleMLP:
             
             self.batch_l     = tf.placeholder(tf.float32, shape=[self.params.BATCH_SIZE, self.params.N_CLASS], name="batch_label")
             self.dr_prob     = tf.placeholder(tf.float32, name="dropout")
+            self.phase       = tf.placeholder(tf.bool, name='phase')
    
            
-    def _MLP(self, in_tensor, out_dim, reuse=None, scope="mlp_scope", v_name="default-mlp"):
-        print ('[launch] MLP (reuse, scope): ', reuse, scope)
-        with tf.name_scope(scope):
-            with tf.variable_scope(name_or_scope=scope, reuse=reuse, initializer=tf.contrib.layers.xavier_initializer()):
+    def _dense(self, x, size, scope):
+        return tf.contrib.layers.fully_connected(x, size, 
+                                                 activation_fn=None,
+                                                 scope=scope)
 
-                initializer = tf.contrib.layers.xavier_initializer(
-                                                                uniform=True,
-                                                                seed=None,
-                                                                dtype=tf.float32
-                                                                )
+    def _dense_batch_relu(self, x, size, phase, scope):
+        with tf.variable_scope(scope):
+            h1 = tf.contrib.layers.fully_connected(x, size, 
+                                                   activation_fn=None,
+                                                   scope='dense')
+            h2 = tf.contrib.layers.batch_norm(h1, 
+                                              center=True, scale=True, 
+                                              is_training=phase,
+                                              scope='bn')
+            return tf.nn.relu(h2, 'relu')
 
-                layer_output = tf.contrib.layers.fully_connected( 
-                                                            inputs = in_tensor,
-                                                            num_outputs =  out_dim,
-                                                            activation_fn = tf.nn.tanh,
-                                                            normalizer_fn=None,
-                                                            normalizer_params=None,
-                                                            weights_initializer=initializer,
-                                                            weights_regularizer=None,
-                                                            biases_initializer=tf.zeros_initializer(),
-                                                            biases_regularizer=None,
-                                                            trainable=True,
-                                                            reuse=reuse,
-                                                            scope=scope+'mlp'
-                                                        )
-                #node_mlp_L1 = tf.nn.dropout( node_mlp_L1, keep_prob=self.dr_prob )
 
-                return layer_output
-            
-            
     def _apply_MLP(self):
         print('[INFO] MLP')
         
@@ -73,21 +61,23 @@ class SimpleMLP:
         
         for i in range(self.params.NUM_LAYERS):
             
-            self.encoding = self._MLP(
-                                    self.encoding, 
-                                    self.params.NUM_HIDDEN, 
-                                    reuse=False, 
-                                    scope='L'+str(i+1),
-                                    v_name='MLP'
-                                 )
+            self.encoding = self._dense_batch_relu(
+                                                    x = self.encoding, 
+                                                    size = self.params.NUM_HIDDEN, 
+                                                    phase = True,
+                                                    #phase = self.phase,
+                                                    scope='L'+str(i+1)
+                                                    )
             
         self.final_encoding = self.encoding
+        
         
     def _create_output_layers(self):
         print('[launch] create output projection layer')
         
         with tf.name_scope('text_output_layer') as scope:
-    
+
+            '''
             self.W_output = tf.Variable(tf.random_normal([self.params.NUM_HIDDEN, self.params.N_CLASS],
                                                     mean=0.0,
                                                     stddev=0.01,
@@ -95,9 +85,11 @@ class SimpleMLP:
                                                    ),
                                                trainable = True,
                                                name='W_output')
+        
             self.bias_output = tf.Variable(tf.zeros([self.params.N_CLASS]), name='bias_output')
-            
             self.output      = tf.matmul(self.final_encoding, self.W_output, name="output") + self.bias_output
+            '''
+            self.output      = self._dense(self.final_encoding, self.params.N_CLASS, 'logits')
             
             self.batch_preds = tf.squeeze( tf.nn.sigmoid(self.output) )
             
@@ -116,11 +108,14 @@ class SimpleMLP:
         print('[launch] create optimizer')
         
         with tf.name_scope('optimizer') as scope:
-            
-            opt_func = tf.train.AdamOptimizer(learning_rate=self.params.LR)
-            gradients = opt_func.compute_gradients(self.loss)
-            capped_gvs = [(tf.clip_by_norm(grad, 1.0), var) for grad, var in gradients]
-            self.optimizer = opt_func.apply_gradients(grads_and_vars=capped_gvs, global_step=self.global_step)
+        
+            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            with tf.control_dependencies(update_ops):
+        
+                opt_func = tf.train.AdamOptimizer(learning_rate=self.params.LR)
+                gradients = opt_func.compute_gradients(self.loss)
+                capped_gvs = [(tf.clip_by_norm(grad, 1.0), var) for grad, var in gradients]
+                self.optimizer = opt_func.apply_gradients(grads_and_vars=capped_gvs, global_step=self.global_step)
             
     
     def _create_summary(self):

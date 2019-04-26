@@ -30,6 +30,7 @@ def train_step(sess, model, batch_gen):
     input_feed = {}
     input_feed[model.batch_d] = list_d
     input_feed[model.batch_l] = list_l
+    input_feed[model.phase]   = True
     input_feed[model.dr_prob] = 1.0
     
     _, summary = sess.run([model.optimizer, model.summary_op], input_feed)

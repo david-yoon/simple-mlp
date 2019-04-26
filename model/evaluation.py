@@ -52,6 +52,7 @@ def run_test(sess, model, batch_gen, data):
         input_feed = {}
         input_feed[model.batch_d] = list_d
         input_feed[model.batch_l] = list_l
+        input_feed[model.phase]   = False
         input_feed[model.dr_prob] = 1.0
         
         try:
