@@ -1,3 +1,13 @@
+
+#data
+data
+
+#tmp
+*TEST*
+graph
+*save*
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
