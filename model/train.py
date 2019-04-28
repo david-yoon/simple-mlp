@@ -261,7 +261,8 @@ if __name__ == '__main__':
     
     graph_name = args.graph_prefix + \
                     '_b' + str(params.BATCH_SIZE) + \
-                    '_h' + str(params.NUM_HIDDEN) + \
+                    '_H' + str(params.NUM_HIDDEN) + \
+                    '_L' + str(params.NUM_LAYERS) + \
                     '_dr' + str(params.DR)
 
     graph_name = graph_name + '_' + datetime.datetime.now().strftime("%m-%d-%H-%M")

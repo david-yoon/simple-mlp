@@ -41,6 +41,8 @@ class Params():
     N_CLASS      = 6
     
     FEATURE_DIM  = 1582     # emobase
+    #FEATURE_DIM  = 6373     # compar
+    
     PAD_INDEX = 0
 
     NUM_HIDDEN = 100
