@@ -87,7 +87,7 @@ class SimpleMLP:
 
             vars   = tf.trainable_variables()
             self.lossL2      = tf.add_n([ tf.nn.l2_loss(v) for v in vars if 'bias' not in v.name ]) * self.params.L2_LOSS_RATIO
-            self.batch_loss = tf.nn.softmax_cross_entropy_with_logits(logits=self.batch_preds, labels=self.y_labels)
+            self.batch_loss = tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.batch_preds, labels=self.y_labels)
             self.loss       = tf.reduce_sum( self.batch_loss ) + self.lossL2
             
             
