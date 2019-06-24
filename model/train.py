@@ -62,17 +62,10 @@ def train_model(params, model, batch_gen, graph_dir_name='default', pre_model=''
 
         initial_time = time.time()
         
-        max_MAP = 0.0
-        max_MRR = 0.0
-        
-        best_test_MAP = 0.0
-        best_test_MRR = 0.0
-        
-        train_MAP, train_MRR, train_loss = 0.0, 0.0, 0.0
-        dev_MAP, dev_MRR, dev_loss = 0.0, 0.0, 0.0
-        test_MAP, test_MRR, test_loss = 0.0, 0.0, 0.0
-        
-        train_MAP_at_best_dev= 0.0
+        min_ce = 1000000
+        best_dev_f1 = 0
+        test_f1_at_best_dev = 0
+        test_zip_at_best_dev = None
         
         for index in range(params.NUM_TRAIN_STEPS):
 
@@ -89,7 +82,7 @@ def train_model(params, model, batch_gen, graph_dir_name='default', pre_model=''
             # run validation
             if (index + 1) % params.VALID_FREQ == 0:
                 
-                dev_loss, dev_MAP, dev_MRR, dev_summary = run_test(sess=sess,
+                dev_ce, dev_accr, dev_f1, dev_zip, dev_summary = run_test(sess=sess,
                                                                    model=model, 
                                                                    batch_gen=batch_gen,
                                                                    data=batch_gen.dev
@@ -102,34 +95,27 @@ def train_model(params, model, batch_gen, graph_dir_name='default', pre_model=''
 
                 if index > params.CAL_ACCURACY_FROM:
 
-                    if ( dev_MAP > max_MAP ):
-                        max_MAP = dev_MAP
-                        max_MRR = dev_MRR
+                    if ( dev_ce < min_ce ):
+                        min_ce = dev_ce
 
                         # save best result
                         if params.IS_SAVE is 1:
                             saver.save(sess, 'save/' + graph_dir_name + '/', model.global_step.eval() )
+                            
+                        early_stop_count = params.MAX_EARLY_STOP_COUNT
 
-                        if dev_MAP > float(params.QUICK_SAVE_BEST):
+                        if dev_accr > float(params.QUICK_SAVE_BEST):
                             saver.save(sess, 'save/' + graph_dir_name + '/', model.global_step.eval() ) 
                         
-                        test_loss, test_MAP, test_MRR, _ = run_test(sess=sess,
+                        test_ce, test_accr, test_f1, test_zip, _ = run_test(sess=sess,
                                                                     model=model,
                                                                     batch_gen=batch_gen,
                                                                     data=batch_gen.test
                                                                     )
-                        train_loss, train_MAP, train_MRR, _ = run_test(sess=sess,
-                                                                       model=model,
-                                                                       batch_gen=batch_gen,
-                                                                       data=batch_gen.train
-                                                                       )
-                        train_MAP_at_best_dev = train_MAP
                         
-                        early_stop_count = params.MAX_EARLY_STOP_COUNT
-                        
-                        if test_MAP > best_test_MAP: 
-                            best_test_MAP = test_MAP
-                            best_test_MRR = test_MRR
+                        best_dev_f1 = dev_f1
+                        test_f1_at_best_dev = test_f1
+                        test_zip_at_best_dev = test_zip
                         
                     else:
                         # early stopping
@@ -137,67 +123,64 @@ def train_model(params, model, batch_gen, graph_dir_name='default', pre_model=''
                             print ("early stopped")
                             break
                              
-                        test_MAP = 0.0
-                        test_MRR = 0.0
-                        
-                        #train_MAP = 0.0
-                        #train_loss = 0.0
-                        train_loss, train_MAP, train_MRR, _ = run_test(sess=sess,
-                                                                       model=model,
-                                                                       batch_gen=batch_gen,
-                                                                       data=batch_gen.train
-                                                                      )
-                        
+                        test_f1 = 0
                         early_stop_count = early_stop_count -1
                         
+                        
+                    train_ce, train_accr, train_f1, train_zip, _ = run_test(sess=sess,
+                                           model=model,
+                                           batch_gen=batch_gen,
+                                           data=batch_gen.train
+                                           )
+                        
+                        
                     print (str( int((end_time - initial_time)/60) ) + " mins" + \
-                      " step/seen/itr: " + str( model.global_step.eval() ) + "/ " + \
-                      str( model.global_step.eval() * model.params.BATCH_SIZE ) + "/" + \
-                      str( round( model.global_step.eval() * model.params.BATCH_SIZE / float(len(batch_gen.train)), 2)  ) + \
-                      "\tdev_MAP: " + '{:.3f}'.format(dev_MAP) + \
-                      " " + '{:.3f}'.format(dev_MRR) + \
-                      "  test_MAP: " + '{:.3f}'.format(test_MAP) + \
-                      " " + '{:.3f}'.format(test_MRR) + \
-                      "  train_MAP: " + '{:.3f}'.format(train_MAP) + \
-                      "  loss: " + '{:.4f}'.format(train_loss))
+                          " step/seen/itr: " + str( model.global_step.eval() ) + "/ " + \
+                           str( model.global_step.eval() * model.params.BATCH_SIZE ) + "/" + \
+                           str( round( model.global_step.eval() * model.params.BATCH_SIZE / float(len(batch_gen.train)), 2)  ) + \
+                           "\tdev f1: " + '{:.3f}'.format(dev_f1)  + \
+                           "  test f1: " + '{:.3f}'.format(test_f1) + \
+                           "  dev loss: " + '{:.2f}'.format(dev_ce) + \
+                           "  train f1: " + '{:.3f}'.format(train_f1))
                 
         writer.close()
 
-        
-        train_loss, train_MAP, train_MRR, _ = run_test(sess=sess,
-                                                       model=model,
-                                                       batch_gen=batch_gen,
-                                                       data=batch_gen.train
-                                                       )
-        
-        # tmp
-        train_MAP_at_best_dev = train_MAP
+        print('Total steps : {}'.format(model.global_step.eval()) )
         
         
-        print ("best result (MAP/MRR) \n" + \
-               "dev   : " +\
-                    str('{:.3f}'.format(max_MAP)) + '\t'+ \
-                    str('{:.3f}'.format(max_MRR)) + '\n'+ \
-               "test  : " +\
-               str('{:.3f}'.format(best_test_MAP)) + '\t' + \
-                    str('{:.3f}'.format(best_test_MRR)) + '\n' + \
-               "train : " +\
-                    str('{:.3f}'.format(train_MAP_at_best_dev)) + \
-                    '\n')
-
-    
-    
+        # unzip final result
+        accr_class, recall_class, f1_class, accr_avg, recall_avg, f1_avg = test_zip_at_best_dev
+        
+        print(accr_class, recall_class, f1_class)
+        
         # result logging to file
         with open('./TEST_run_result.txt', 'a') as f:
             f.write(datetime.datetime.now().strftime("%Y-%m-%d %H:%M") + '\t' + \
                     batch_gen.data_path.split('/')[-2] + '\t' + \
                     graph_dir_name + '\t' + \
-                    str('{:.3f}'.format(max_MAP)) + '\t'+ \
-                    str('{:.3f}'.format(max_MRR)) + '\t'+ \
-                    str('{:.3f}'.format(best_test_MAP)) + '\t' + \
-                    str('{:.3f}'.format(best_test_MRR)) + '\t' + \
-                    str('{:.3f}'.format(train_MAP)) + \
+                    str(accr_class[0]) + '\t' + \
+                    str(recall_class[0]) + '\t' + \
+                    str(f1_class[0]) + '\t\t' + \
+                    str(accr_class[1]) + '\t' + \
+                    str(recall_class[1]) + '\t' + \
+                    str(f1_class[1]) + '\t\t' + \
+                    str(accr_class[2]) + '\t' + \
+                    str(recall_class[2]) + '\t' + \
+                    str(f1_class[2]) + '\t\t' + \
+                    str(accr_class[3]) + '\t' + \
+                    str(recall_class[3]) + '\t' + \
+                    str(f1_class[3]) + '\t\t' + \
+                    str(accr_class[4]) + '\t' + \
+                    str(recall_class[4]) + '\t' + \
+                    str(f1_class[4]) + '\t\t' + \
+                    str(accr_class[5]) + '\t' + \
+                    str(recall_class[5]) + '\t' + \
+                    str(f1_class[5]) + '\t\t' + \
+                    str(accr_avg) + '\t' + \
+                    str(recall_avg) + '\t' + \
+                    str(f1_avg) + \
                     '\n')
+
     
 
 def create_dir(dir_name):

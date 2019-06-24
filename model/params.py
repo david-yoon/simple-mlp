@@ -59,3 +59,13 @@ class Params():
     ###############################
     IS_RESULT_LOGGING = False
     
+    
+    ################################
+    #     MEASRE
+    # macro     : unweighted mean (cal among each class and then average the results)
+    # weighted : ignore class unbalance
+    ################################
+    ACCURACY_AVG = 'weighted'
+    RECALL_AVG   = 'weighted'
+    F1_AVG       = 'weighted'
+    

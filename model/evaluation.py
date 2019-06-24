@@ -1,14 +1,15 @@
 #-*- coding: utf-8 -*-
 """
-what    : compareAggregate
-data    : wikiQA
+what    : evaluation
+data    : ..
 """
 from tensorflow.core.framework import summary_pb2
 from random import shuffle
 import numpy as np
 
-from sklearn.metrics import precision_score
+from sklearn.metrics import f1_score
 from sklearn.metrics import recall_score
+from sklearn.metrics import precision_score
 
 """
     desc  : 
@@ -74,34 +75,51 @@ def run_test(sess, model, batch_gen, data):
     list_label    = list_label[:len(data)]
     list_loss     = list_loss[:len(data)]
 
+    
+    
+    accr_class = precision_score(y_true=list_label,
+                           y_pred=list_pred,
+                           average=None)
+        
+    recall_class = recall_score(y_true=list_label,
+                           y_pred=list_pred,
+                           average=None)
+        
+    f1_class = f1_score(y_true=list_label,
+                  y_pred=list_pred,
+                  average=None)
+    
+    
     # weighted : ignore class unbalance (avg of each accr)
     # macro    : unweighted mean (take label imbalance into account)
-    accr_WA = precision_score(y_true=list_label,
+    accr_avg = precision_score(y_true=list_label,
                            y_pred=list_pred,
-                           average='weighted')
+                           average=model.params.ACCURACY_AVG)
+        
+    recall_avg = recall_score(y_true=list_label,
+                           y_pred=list_pred,
+                           average=model.params.RECALL_AVG)
+        
+    f1_avg = f1_score(y_true=list_label,
+                  y_pred=list_pred,
+                  average=model.params.F1_AVG)
     
-    accr_UA = precision_score(y_true=list_label,
-                           y_pred=list_pred,
-                           average='macro')
+#     accr_WA = precision_score(y_true=list_label,
+#                            y_pred=list_pred,
+#                            average='weighted')
+    
+#     accr_UA = precision_score(y_true=list_label,
+#                            y_pred=list_pred,
+#                            average='macro')
+
+    result_zip = [accr_class, recall_class, f1_class, accr_avg, recall_avg, f1_avg]
     
     sum_loss = np.sum( list_loss )
         
-
-    if model.params.IS_RESULT_LOGGING:
-        print('result logging as file')
-        with open('TEST-eval_log.tsv', 'w') as f:
-            f.write( str('pred') +
-                    '\t' + str('label')  +
-                    '\t' + str('is_correct') +
-                    '\t' + str('entailment') +
-                    '\t' + str('contradiction') +
-                    '\t' + str('neutral')+ '\n')
-            
     
     value1 = summary_pb2.Summary.Value(tag="dev_loss", simple_value=sum_loss)
-    value2 = summary_pb2.Summary.Value(tag="dev_WA", simple_value=accr_WA )
-    value3 = summary_pb2.Summary.Value(tag="dev_UA", simple_value=accr_UA )                                   
-    summary = summary_pb2.Summary(value=[value1, value2, value3])
+    value2 = summary_pb2.Summary.Value(tag="dev_accr", simple_value=accr_avg )
+    summary = summary_pb2.Summary(value=[value1, value2])
 
     
-    return sum_loss, accr_WA, accr_UA, summary
+    return sum_loss, accr_avg, f1_avg, result_zip, summary

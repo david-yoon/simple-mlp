@@ -1,7 +1,7 @@
 #-*- coding: utf-8 -*-
 """
-what    : compareAggregate
-data    : 
+what    : MLP
+data    : ..
 """
 import tensorflow as tf
 from tensorflow.contrib.distributions import Categorical
