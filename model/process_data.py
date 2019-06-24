@@ -20,7 +20,8 @@ class ProcessData:
         self.dev   = self.load_data( self.data_path + self.params.DATA_DEV )
         self.test  = self.load_data( self.data_path + self.params.DATA_TEST )
 
-        print ('[completed] load data')
+        params.FEATURE_DIM = np.shape(self.train[0][0])[0]
+        print ('[completed] load data, feature_dim: ', params.FEATURE_DIM)
         
         
     def load_data(self, file_path):

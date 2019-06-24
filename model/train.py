@@ -1,8 +1,8 @@
 #-*- coding: utf-8 -*-
 
 """
-what    : compareAggregate
-data    : wikiQA
+what    : MLP, CNN
+data    : ..
 """
 import tensorflow as tf
 import os
@@ -12,6 +12,7 @@ import datetime
 import random
 
 from model import *
+from model_cnn import *
 from process_data import *
 from evaluation import *
 
@@ -217,7 +218,13 @@ def main(params, graph_dir_name):
 
     batch_gen = ProcessData(params)
     
-    model = SimpleMLP(params=params)
+    if (params.MODEL=='mlp'):
+        print("model: ", params.MODEL)
+        model = SimpleMLP(params=params)
+    elif (params.MODEL=='cnn'):
+        print("model: ", params.MODEL)
+        model = SimpleCNN(params=params)
+        
     model.build_graph()
     
     params.VALID_FREQ = int( len(batch_gen.train) * params.EPOCH_PER_VALID_FREQ / float(params.BATCH_SIZE)  ) + 1
@@ -232,11 +239,17 @@ if __name__ == '__main__':
     p.add_argument('--corpus', type=str, default='bigcomp')
     p.add_argument('--data_path', type=str, default='../data/target/')
     
+    p.add_argument('--model', type=str, default='mlp')
+    
     p.add_argument('--batch_size', type=int, default=128)
     p.add_argument('--hidden', type=int, default=128)
     p.add_argument('--num_layer', type=int, default=1)
     p.add_argument('--lr', type=float, default=1e-3)
     p.add_argument('--dr', type=float, default=1.0)
+    
+    # cnn
+    p.add_argument('--cnn_filters', type=int, default=16)
+    p.add_argument('--cnn_stride', type=int, default=10)
     
     p.add_argument('--num_train_steps', type=int, default=10000)
     p.add_argument('--is_save', type=int, default=0)
@@ -248,7 +261,12 @@ if __name__ == '__main__':
         params = Params()
         graph_name = 'bigcomp'
     
+    params.MODEL     = args.model
     params.DATA_PATH = args.data_path
+    
+    # CNN
+    params.NUM_FILTERS = args.cnn_filters
+    params.STRIDE      = args.cnn_stride
     
     params.BATCH_SIZE = args.batch_size
     params.NUM_HIDDEN = args.hidden
@@ -267,13 +285,18 @@ if __name__ == '__main__':
 
     graph_name = graph_name + '_' + datetime.datetime.now().strftime("%m-%d-%H-%M")
     
-    print('[INFO] data_path:', params.DATA_PATH)
-    print('[INFO] batch_size:', params.BATCH_SIZE)
-    print('[INFO] hidden:', params.NUM_HIDDEN)
-    print('[INFO] layers:', params.NUM_LAYERS)
-    print('[INFO] learning rate:', params.LR)
-    print('[INFO] drop out:', params.DR)
-    print('[INFO] is save:', params.IS_SAVE)
+    print('[INFO] model: ', params.MODEL)
+    if ( params.MODEL == 'cnn'):
+        print('[INFO] # filters : ', params.NUM_FILTERS)
+        print('[INFO] list_kernels : ', params.LIST_KERNELS)
+        print('[INFO] stride : ', params.STRIDE)
+    print('[INFO] data_path: ', params.DATA_PATH)
+    print('[INFO] batch_size: ', params.BATCH_SIZE)
+    print('[INFO] hidden: ', params.NUM_HIDDEN)
+    print('[INFO] layers: ', params.NUM_LAYERS)
+    print('[INFO] learning rate: ', params.LR)
+    print('[INFO] drop out: ', params.DR)
+    print('[INFO] is save: ', params.IS_SAVE)
 
     main(
         params  = params,

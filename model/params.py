@@ -7,7 +7,6 @@ class Params():
     ################################
     #     dataset
     ################################     
-        
     DATA_PATH    = ''
     
         
@@ -38,15 +37,21 @@ class Params():
     ################################
     #     model
     ################################
+    MODEL        = 'mlp'
+    
     N_CLASS      = 6
-    
-    FEATURE_DIM  = 1582     # emobase
-    #FEATURE_DIM  = 6373     # compar
-    
-    PAD_INDEX = 0
+    FEATURE_DIM  = 100     # emobase 1582, compar 6373
 
+    # MLP
+    PAD_INDEX = 0
     NUM_HIDDEN = 100
     NUM_LAYERS = 1
+    
+    # CNN
+    NUM_FILTERS  = 16
+    LIST_KERNELS = [10, 50, 100, 200 ,300, 400]
+    STRIDE       = 10
+    
     
     ###############################
     # ETC
