@@ -77,22 +77,9 @@ class SimpleMLP:
         
         with tf.name_scope('text_output_layer') as scope:
 
-            '''
-            self.W_output = tf.Variable(tf.random_normal([self.params.NUM_HIDDEN, self.params.N_CLASS],
-                                                    mean=0.0,
-                                                    stddev=0.01,
-                                                    dtype=tf.float32
-                                                   ),
-                                               trainable = True,
-                                               name='W_output')
-        
-            self.bias_output = tf.Variable(tf.zeros([self.params.N_CLASS]), name='bias_output')
-            self.output      = tf.matmul(self.final_encoding, self.W_output, name="output") + self.bias_output
-            '''
             self.output      = self._dense(self.final_encoding, self.params.N_CLASS, 'logits')
             
             self.batch_preds = tf.squeeze( tf.nn.sigmoid(self.output) )
-            
             self.y_labels  = self.batch_l
     
             
