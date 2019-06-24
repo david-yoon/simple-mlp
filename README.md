@@ -1,1 +1,1 @@
-# simple-mlp
+# simple-dnn
