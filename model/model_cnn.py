@@ -114,14 +114,12 @@ class SimpleCNN:
         
         with tf.name_scope('optimizer') as scope:
         
-            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-            with tf.control_dependencies(update_ops):
-        
-                opt_func = tf.train.AdamOptimizer(learning_rate=self.params.LR)
-                gradients = opt_func.compute_gradients(self.loss)
-                capped_gvs = [(tf.clip_by_norm(grad, 1.0), var) for grad, var in gradients]
-                self.optimizer = opt_func.apply_gradients(grads_and_vars=capped_gvs, global_step=self.global_step)
+            opt_func = tf.train.AdamOptimizer(learning_rate=self.params.LR)
+            gradients, variables = zip(*opt_func.compute_gradients(self.loss))
+            gradients = [None if gradient is None else tf.clip_by_norm(t=gradient, clip_norm=1.0) for gradient in gradients]
             
+            self.optimizer = opt_func.apply_gradients(zip(gradients, variables), global_step=self.global_step)
+        
     
     def _create_summary(self):
         print('[launch] create summary')
