@@ -61,13 +61,24 @@ class SimpleCNN:
                                             name        = "cnn"+str(i)
                                             )
 
-                pooled = tf.layers.max_pooling1d(
-                                            inputs      = cnn_1d,
-                                            pool_size   = self.params.FEATURE_DIM,
-                                            strides     = self.params.FEATURE_DIM,
-                                            padding     = 'SAME',
-                                            name        = "pool"+str(i)
-                                        )
+                if (self.params.POOL == 'max'):
+                    pooled = tf.layers.max_pooling1d(
+                                                inputs      = cnn_1d,
+                                                pool_size   = self.params.FEATURE_DIM,
+                                                strides     = self.params.FEATURE_DIM,
+                                                padding     = 'SAME',
+                                                name        = "pool"+str(i)
+                                            )
+                elif (self.params.POOL == 'average'):
+                    pooled = tf.layers.average_pooling1d(
+                                                inputs      = cnn_1d,
+                                                pool_size   = self.params.FEATURE_DIM,
+                                                strides     = self.params.FEATURE_DIM,
+                                                padding     = 'SAME',
+                                                name        = "pool"+str(i)
+                                            )
+                else:
+                    print("error in pooling")
                 
                 self._pooled_outputs.append( tf.squeeze(pooled) )
         

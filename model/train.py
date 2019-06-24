@@ -154,11 +154,11 @@ def train_model(params, model, batch_gen, graph_dir_name='default', pre_model=''
                       " step/seen/itr: " + str( model.global_step.eval() ) + "/ " + \
                       str( model.global_step.eval() * model.params.BATCH_SIZE ) + "/" + \
                       str( round( model.global_step.eval() * model.params.BATCH_SIZE / float(len(batch_gen.train)), 2)  ) + \
-                      "\tdev: " + '{:.3f}'.format(dev_MAP) + \
+                      "\tdev_MAP: " + '{:.3f}'.format(dev_MAP) + \
                       " " + '{:.3f}'.format(dev_MRR) + \
-                      "  test: " + '{:.3f}'.format(test_MAP) + \
+                      "  test_MAP: " + '{:.3f}'.format(test_MAP) + \
                       " " + '{:.3f}'.format(test_MRR) + \
-                      "  train: " + '{:.3f}'.format(train_MAP) + \
+                      "  train_MAP: " + '{:.3f}'.format(train_MAP) + \
                       "  loss: " + '{:.4f}'.format(train_loss))
                 
         writer.close()
@@ -290,6 +290,7 @@ if __name__ == '__main__':
         print('[INFO] # filters : ', params.NUM_FILTERS)
         print('[INFO] list_kernels : ', params.LIST_KERNELS)
         print('[INFO] stride : ', params.STRIDE)
+        print('[INFO] pool : ', params.POOL)
     print('[INFO] data_path: ', params.DATA_PATH)
     print('[INFO] batch_size: ', params.BATCH_SIZE)
     print('[INFO] hidden: ', params.NUM_HIDDEN)

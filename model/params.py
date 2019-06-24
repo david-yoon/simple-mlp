@@ -49,8 +49,9 @@ class Params():
     
     # CNN
     NUM_FILTERS  = 16
-    LIST_KERNELS = [10, 50, 100, 200 ,300, 400]
+    LIST_KERNELS = [10, 50, 100, 200 ,300, 400, 800]
     STRIDE       = 10
+    POOL         = 'average'
     
     
     ###############################
