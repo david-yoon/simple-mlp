@@ -1,2 +1,2 @@
-tqdm==4.31.1
+tqdm==4.66.3
 scikit-learn==0.20.0
